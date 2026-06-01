@@ -146,10 +146,15 @@ pub fn generate_salt_to_uninit<'out>(
         let mut counter = counter as usize;
         let mut i = counter_buf.len();
 
-        while counter != 0 {
-            counter_buf[i - 1].write(b"0123456789abcdef"[counter & 0xf]);
-            counter >>= 4;
+        if counter == 0 {
             i -= 1;
+            counter_buf[i].write(b'0');
+        } else {
+            while counter != 0 {
+                counter_buf[i - 1].write(b"0123456789abcdef"[counter & 0xf]);
+                counter >>= 4;
+                i -= 1;
+            }
         }
 
         &counter_buf[i..]
@@ -185,9 +190,13 @@ pub fn generate_salt(website: &str, username: &str, counter: u32) -> std::vec::V
     let mut counter_copy = counter;
     let mut counter_len = 0;
 
-    while counter_copy != 0 {
-        counter_copy >>= 4;
-        counter_len += 1;
+    if counter == 0 {
+        counter_len = 1;
+    } else {
+        while counter_copy != 0 {
+            counter_copy >>= 4;
+            counter_len += 1;
+        }
     }
 
     let mut uninit_output = uninit_vec(website.len() + username.len() + counter_len);
